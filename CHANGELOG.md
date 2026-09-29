@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-09-29
+
+### Added
+- `listener_enabled` bundle option (default `true`). Set it to `false` to not register the `ExceptionListener`, for projects that handle exceptions with their own listener. The exceptions, contracts, `TranslationOption` and the locale resolver remain available.
+
+---
+
 ## [1.0.0] - 2026-09-29
 
 ### Added

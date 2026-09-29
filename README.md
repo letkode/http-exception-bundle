@@ -31,12 +31,24 @@ All options are optional; defaults are shown.
 # config/packages/letkode_http_exception.yaml
 letkode_http_exception:
     path_prefix: /api        # only requests whose path starts with this are handled
+    listener_enabled: true   # set to false to not register the ExceptionListener
     listener_priority: 0     # priority of the kernel.exception listener
 ```
 
 `path_prefix` is matched as a plain string prefix, so `/api` also matches `/apiary`. An empty string (`''`) makes the listener handle every path.
 
 Debug traces follow `%kernel.debug%`; there is nothing to configure.
+
+### Using your own exception listener
+
+To handle exceptions with your own listener, turn the bundle's off:
+
+```yaml
+letkode_http_exception:
+    listener_enabled: false
+```
+
+The exceptions, the contracts, `TranslationOption` and the locale resolver stay available; only the `kernel.exception` listener is not registered. Your listener can keep relying on `HttpStatusExceptionInterface` (`getStatusCode()`, `getErrorCode()`, `getOption()`).
 
 ---
 

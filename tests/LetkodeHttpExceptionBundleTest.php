@@ -149,4 +149,49 @@ final class LetkodeHttpExceptionBundleTest extends TestCase
 
         self::assertTrue($found, 'No addListener call for kernel.exception was registered.');
     }
+
+    public function testListenerIsEnabledByDefault(): void
+    {
+        self::assertTrue($this->load()->hasDefinition(ExceptionListener::class));
+        self::assertTrue($this->load(['listener_enabled' => true])->hasDefinition(ExceptionListener::class));
+    }
+
+    public function testListenerCanBeDisabled(): void
+    {
+        $container = $this->load(['listener_enabled' => false, 'path_prefix' => '/v1']);
+
+        self::assertFalse($container->hasDefinition(ExceptionListener::class));
+        // Everything else the bundle provides is still registered.
+        self::assertTrue($container->hasDefinition(RequestLocaleResolver::class));
+        self::assertTrue($container->hasAlias(LocaleResolverInterface::class));
+        self::assertSame('/v1', $container->getParameter('letkode.http_exception.path_prefix'));
+    }
+
+    public function testDisabledListenerIsNotRegisteredOnTheDispatcher(): void
+    {
+        $container = $this->load(['listener_enabled' => false]);
+
+        $container->register('event_dispatcher', EventDispatcher::class)->setPublic(true);
+        $container->addCompilerPass(new RegisterListenersPass());
+        $container->compile();
+
+        self::assertSame([], $container->getDefinition('event_dispatcher')->getMethodCalls());
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function invalidListenerEnabledProvider(): iterable
+    {
+        yield 'string' => ['yes'];
+        yield 'integer' => [1];
+    }
+
+    #[DataProvider('invalidListenerEnabledProvider')]
+    public function testNonBooleanListenerEnabledIsRejected(mixed $value): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->load(['listener_enabled' => $value]);
+    }
 }
