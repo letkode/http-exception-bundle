@@ -1,0 +1,42 @@
+{
+    "name": "letkode/http-exception-bundle",
+    "description": "HTTP status exceptions and a JSON exception listener for Symfony applications",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "psr/log": "^1.1 || ^2.0 || ^3.0",
+        "symfony/config": "^7.0 || ^8.0",
+        "symfony/dependency-injection": "^7.0 || ^8.0",
+        "symfony/http-foundation": "^7.0 || ^8.0",
+        "symfony/http-kernel": "^7.0 || ^8.0",
+        "symfony/translation-contracts": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11",
+        "phpstan/phpstan": "^2",
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "symfony/validator": "^7.0 || ^8.0",
+        "symfony/yaml": "^7.0 || ^8.0"
+    },
+    "suggest": {
+        "symfony/validator": "To render 422 responses with per-field errors from ValidationFailedException"
+    },
+    "autoload": {
+        "psr-4": {
+            "Letkode\\HttpExceptionBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Letkode\\HttpExceptionBundle\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "symfony": {
+            "bundles": {
+                "Letkode\\HttpExceptionBundle\\LetkodeHttpExceptionBundle": ["all"]
+            }
+        }
+    }
+}
