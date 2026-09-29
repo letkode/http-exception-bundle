@@ -20,10 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Migration from `letkode/common-bundle`
 ```php
-// Before
-use Letkode\CommonBundle\Exception\Http\BadRequestException;
-use Letkode\CommonBundle\Exception\Http\HttpStatusExceptionInterface;
-use Letkode\CommonBundle\Exception\Http\Option\TranslationOption;
+// Before (letkode/common-bundle 1.x)
+// The unreleased development namespace Letkode\CommonBundle\Exception\Http\...
+// (including ...\Http\Option\TranslationOption) maps the same way.
+use Letkode\CommonBundle\Exception\BadRequestException;
+use Letkode\CommonBundle\Exception\HttpStatusExceptionInterface;
 
 // After
 use Letkode\HttpExceptionBundle\Exception\BadRequestException;
@@ -31,3 +32,6 @@ use Letkode\HttpExceptionBundle\Contract\HttpStatusExceptionInterface;
 use Letkode\HttpExceptionBundle\Option\TranslationOption;
 ```
 Delete your application's own `ExceptionListener`; this bundle's replaces it.
+
+### Changed
+- The 2nd constructor argument of the exceptions is now the string `errorCode` (not an int `$code`); `getCode()` is always 0. Pass the previous exception as the 3rd argument / `previous:`.

@@ -8,9 +8,18 @@ use Letkode\HttpExceptionBundle\Contract\LocaleResolverInterface;
 use Letkode\HttpExceptionBundle\EventListener\ExceptionListener;
 use Letkode\HttpExceptionBundle\LetkodeHttpExceptionBundle;
 use Letkode\HttpExceptionBundle\Locale\RequestLocaleResolver;
+use Letkode\HttpExceptionBundle\Tests\Fixtures\FakeTranslator;
+use Letkode\HttpExceptionBundle\Tests\Fixtures\RecordingLogger;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Symfony\Component\EventDispatcher\DependencyInjection\RegisterListenersPass;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class LetkodeHttpExceptionBundleTest extends TestCase
 {
@@ -84,5 +93,60 @@ final class LetkodeHttpExceptionBundleTest extends TestCase
 
         $container->setAlias(LocaleResolverInterface::class, 'app.custom_locale_resolver');
         self::assertSame('app.custom_locale_resolver', (string) $container->getAlias(LocaleResolverInterface::class));
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function invalidPathPrefixProvider(): iterable
+    {
+        yield 'integer' => [123];
+        yield 'null' => [null];
+    }
+
+    #[DataProvider('invalidPathPrefixProvider')]
+    public function testNonStringPathPrefixIsRejected(mixed $value): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->load(['path_prefix' => $value]);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, int}>
+     */
+    public static function priorityProvider(): iterable
+    {
+        yield 'default' => [[], 0];
+        yield 'custom' => [['listener_priority' => -10], -10];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    #[DataProvider('priorityProvider')]
+    public function testContainerCompilesAndRegistersTheListenerWithConfiguredPriority(array $config, int $expected): void
+    {
+        $container = $this->load($config);
+        $container->register('event_dispatcher', EventDispatcher::class)->setPublic(true);
+        $container->register('translator', FakeTranslator::class)->setPublic(true);
+        $container->setAlias(TranslatorInterface::class, 'translator');
+        $container->register('logger', RecordingLogger::class)->setPublic(true);
+        $container->setAlias(LoggerInterface::class, 'logger');
+        $container->register('request_stack', RequestStack::class)->setPublic(true);
+        $container->setAlias(RequestStack::class, 'request_stack');
+        $container->addCompilerPass(new RegisterListenersPass());
+
+        $container->compile();
+
+        $found = false;
+        foreach ($container->getDefinition('event_dispatcher')->getMethodCalls() as [$method, $arguments]) {
+            if ('addListener' === $method && 'kernel.exception' === $arguments[0]) {
+                $found = true;
+                self::assertSame($expected, $container->getParameterBag()->resolveValue($arguments[2]));
+            }
+        }
+
+        self::assertTrue($found, 'No addListener call for kernel.exception was registered.');
     }
 }

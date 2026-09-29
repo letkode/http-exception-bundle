@@ -20,7 +20,13 @@ final class LetkodeHttpExceptionBundle extends AbstractBundle
     {
         $definition->rootNode()
             ->children()
-                ->scalarNode('path_prefix')->defaultValue('/api')->end()
+                ->scalarNode('path_prefix')
+                    ->defaultValue('/api')
+                    ->validate()
+                        ->ifTrue(static fn (mixed $v): bool => !\is_string($v))
+                        ->thenInvalid('path_prefix must be a string.')
+                    ->end()
+                ->end()
                 ->integerNode('listener_priority')->defaultValue(0)->end()
             ->end()
         ;

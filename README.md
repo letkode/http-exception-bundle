@@ -34,6 +34,8 @@ letkode_http_exception:
     listener_priority: 0     # priority of the kernel.exception listener
 ```
 
+`path_prefix` is matched as a plain string prefix, so `/api` also matches `/apiary`. An empty string (`''`) makes the listener handle every path.
+
 Debug traces follow `%kernel.debug%`; there is nothing to configure.
 
 ---
@@ -88,6 +90,7 @@ Server errors (5xx) are logged as `critical`.
 Pass a `TranslationOption` to translate the message (which then acts as a translation key):
 
 ```php
+use Letkode\HttpExceptionBundle\Exception\BadRequestException;
 use Letkode\HttpExceptionBundle\Option\TranslationOption;
 
 throw new BadRequestException(
@@ -123,14 +126,19 @@ Letkode\HttpExceptionBundle\Contract\LocaleResolverInterface: '@App\Locale\MyLoc
 ## Migrating from `letkode/common-bundle`
 
 ```php
-// Before
-use Letkode\CommonBundle\Exception\Http\BadRequestException;
-use Letkode\CommonBundle\Exception\Http\HttpStatusExceptionInterface;
+// Before (letkode/common-bundle 1.x)
+// The unreleased development namespace Letkode\CommonBundle\Exception\Http\...
+// (including ...\Http\Option\TranslationOption) maps the same way.
+use Letkode\CommonBundle\Exception\BadRequestException;
+use Letkode\CommonBundle\Exception\HttpStatusExceptionInterface;
 
 // After
 use Letkode\HttpExceptionBundle\Exception\BadRequestException;
 use Letkode\HttpExceptionBundle\Contract\HttpStatusExceptionInterface;
+use Letkode\HttpExceptionBundle\Option\TranslationOption;
 ```
+
+The 2nd constructor argument is now the string `errorCode` (not an int `$code`); `getCode()` is always 0. Pass the previous exception as the 3rd argument / `previous:`.
 
 Remove your application's own `ExceptionListener`; this bundle provides it.
 
