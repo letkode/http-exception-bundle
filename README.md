@@ -123,27 +123,6 @@ Letkode\HttpExceptionBundle\Contract\LocaleResolverInterface: '@App\Locale\MyLoc
 
 ---
 
-## Migrating from `letkode/common-bundle`
-
-```php
-// Before (letkode/common-bundle 1.x)
-// The unreleased development namespace Letkode\CommonBundle\Exception\Http\...
-// (including ...\Http\Option\TranslationOption) maps the same way.
-use Letkode\CommonBundle\Exception\BadRequestException;
-use Letkode\CommonBundle\Exception\HttpStatusExceptionInterface;
-
-// After
-use Letkode\HttpExceptionBundle\Exception\BadRequestException;
-use Letkode\HttpExceptionBundle\Contract\HttpStatusExceptionInterface;
-use Letkode\HttpExceptionBundle\Option\TranslationOption;
-```
-
-The 2nd constructor argument is now the string `errorCode` (not an int `$code`); `getCode()` is always 0. Pass the previous exception as the 3rd argument / `previous:`.
-
-Remove your application's own `ExceptionListener`; this bundle provides it.
-
----
-
 ## License
 
 MIT
