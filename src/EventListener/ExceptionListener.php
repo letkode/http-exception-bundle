@@ -178,7 +178,7 @@ final readonly class ExceptionListener
             : $msg;
     }
 
-    private function trans(string $key, ?string $fallbackKey = null): string
+    private function trans(string $key, string|null $fallbackKey = null): string
     {
         $locale = $this->localeResolver->resolve();
         $translated = $this->translator->trans($key, domain: 'exceptions', locale: $locale);

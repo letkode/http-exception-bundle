@@ -13,7 +13,7 @@ final readonly class RequestLocaleResolver implements LocaleResolverInterface
     {
     }
 
-    public function resolve(): ?string
+    public function resolve(): string|null
     {
         return $this->requestStack->getCurrentRequest()?->getLocale();
     }

@@ -16,8 +16,8 @@ trait HttpStatusExceptionTrait
      */
     public function __construct(
         string $message,
-        private readonly ?string $errorCode = null,
-        ?\Throwable $previous = null,
+        private readonly string|null $errorCode = null,
+        \Throwable|null $previous = null,
         array $options = [],
     ) {
         parent::__construct($message, 0, $previous);
@@ -34,7 +34,7 @@ trait HttpStatusExceptionTrait
      *
      * @return T|null
      */
-    public function getOption(string $optionClass): ?ExceptionOptionInterface
+    public function getOption(string $optionClass): ExceptionOptionInterface|null
     {
         /** @var T|null $option */
         $option = $this->options[$optionClass] ?? null;

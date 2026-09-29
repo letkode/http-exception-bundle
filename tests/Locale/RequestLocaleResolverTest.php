@@ -19,7 +19,7 @@ final class RequestLocaleResolverTest extends TestCase
 
     public function testReturnsNullWhenThereIsNoRequest(): void
     {
-        self::assertNull((new RequestLocaleResolver(new RequestStack()))->resolve());
+        self::assertNull(new RequestLocaleResolver(new RequestStack())->resolve());
     }
 
     public function testReturnsTheLocaleOfTheCurrentRequest(): void
@@ -29,7 +29,7 @@ final class RequestLocaleResolverTest extends TestCase
         $stack = new RequestStack();
         $stack->push($request);
 
-        self::assertSame('es', (new RequestLocaleResolver($stack))->resolve());
+        self::assertSame('es', new RequestLocaleResolver($stack)->resolve());
     }
 
     public function testFollowsTheCurrentRequestOfTheStack(): void
@@ -42,6 +42,6 @@ final class RequestLocaleResolverTest extends TestCase
         $stack->push($main);
         $stack->push($sub);
 
-        self::assertSame('fr', (new RequestLocaleResolver($stack))->resolve());
+        self::assertSame('fr', new RequestLocaleResolver($stack)->resolve());
     }
 }

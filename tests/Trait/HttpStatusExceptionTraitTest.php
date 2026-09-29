@@ -13,12 +13,12 @@ final class HttpStatusExceptionTraitTest extends TestCase
 {
     public function testErrorCodeDefaultsToTheExceptionDefault(): void
     {
-        self::assertSame('STUB', (new StubHttpException('boom'))->getErrorCode());
+        self::assertSame('STUB', new StubHttpException('boom')->getErrorCode());
     }
 
     public function testErrorCodeCanBeOverriddenByTheConstructor(): void
     {
-        self::assertSame('CUSTOM', (new StubHttpException('boom', 'CUSTOM'))->getErrorCode());
+        self::assertSame('CUSTOM', new StubHttpException('boom', 'CUSTOM')->getErrorCode());
     }
 
     public function testPreviousExceptionIsPreservedAndCodeIsZero(): void
@@ -41,7 +41,7 @@ final class HttpStatusExceptionTraitTest extends TestCase
 
     public function testGetOptionReturnsNullWhenNotRegistered(): void
     {
-        self::assertNull((new StubHttpException('boom'))->getOption(TranslationOption::class));
+        self::assertNull(new StubHttpException('boom')->getOption(TranslationOption::class));
     }
 
     public function testLastOptionOfTheSameClassWins(): void

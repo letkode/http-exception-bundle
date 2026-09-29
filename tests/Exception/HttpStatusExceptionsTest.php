@@ -83,7 +83,7 @@ final class HttpStatusExceptionsTest extends TestCase
     #[DataProvider('exceptionProvider')]
     public function testErrorCodeCanBeOverridden(string $class, int $status, string $errorCode): void
     {
-        self::assertSame('CUSTOM', (new $class('error', 'CUSTOM'))->getErrorCode());
+        self::assertSame('CUSTOM', new $class('error', 'CUSTOM')->getErrorCode());
     }
 
     /**

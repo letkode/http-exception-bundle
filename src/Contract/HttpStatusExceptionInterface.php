@@ -17,5 +17,5 @@ interface HttpStatusExceptionInterface
      *
      * @return T|null
      */
-    public function getOption(string $optionClass): ?ExceptionOptionInterface;
+    public function getOption(string $optionClass): ExceptionOptionInterface|null;
 }

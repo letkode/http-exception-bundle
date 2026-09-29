@@ -20,7 +20,7 @@ final class LetkodeHttpExceptionBundleTest extends TestCase
     private function load(array $config = []): ContainerBuilder
     {
         $container = new ContainerBuilder(new ParameterBag(['kernel.debug' => true]));
-        $extension = (new LetkodeHttpExceptionBundle())->getContainerExtension();
+        $extension = new LetkodeHttpExceptionBundle()->getContainerExtension();
         self::assertNotNull($extension);
 
         $extension->load([$config], $container);

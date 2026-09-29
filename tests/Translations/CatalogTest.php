@@ -95,7 +95,7 @@ final class CatalogTest extends TestCase
             $class = 'Letkode\\HttpExceptionBundle\\Exception\\' . $short;
             self::assertTrue(is_subclass_of($class, AbstractHttpStatusException::class), $class);
 
-            $status = (new $class('x'))->getStatusCode();
+            $status = new $class('x')->getStatusCode();
             self::assertArrayHasKey($status, $http, "$short returns $status but http.$status has no message");
         }
     }

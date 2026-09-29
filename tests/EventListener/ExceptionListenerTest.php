@@ -42,8 +42,8 @@ final class ExceptionListenerTest extends TestCase
         string $path = '/api/things',
         bool $debug = false,
         array $messages = [],
-        ?string $locale = 'es',
-        ?FakeTranslator $translator = null,
+        string|null $locale = 'es',
+        FakeTranslator|null $translator = null,
     ): ExceptionEvent {
         $listener = new ExceptionListener(
             $translator ?? new FakeTranslator($messages),
