@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-09-29
+
+### Added
+- `Option\ErrorsOption`: errors by field, rendered by the `ExceptionListener` under the `errors` key of the response. Each message is a string or a Symfony `TranslatableInterface`, translated with the resolved locale. Responses of exceptions without the option are unchanged.
+
+### Changed
+- The concrete HTTP exceptions are no longer `final`, so they can be extended (for example `class UserNotFoundException extends EntityNotFoundException`, overriding `defaultErrorCode()`).
+
+---
+
 ## [1.1.0] - 2026-09-29
 
 ### Added

@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class TooManyRequestsException extends AbstractHttpStatusException
+class TooManyRequestsException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

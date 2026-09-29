@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class GatewayTimeoutException extends AbstractHttpStatusException
+class GatewayTimeoutException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

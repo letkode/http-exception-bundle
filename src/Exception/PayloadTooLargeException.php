@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class PayloadTooLargeException extends AbstractHttpStatusException
+class PayloadTooLargeException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

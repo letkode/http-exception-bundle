@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class UnsupportedMediaTypeException extends AbstractHttpStatusException
+class UnsupportedMediaTypeException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class PreconditionFailedException extends AbstractHttpStatusException
+class PreconditionFailedException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

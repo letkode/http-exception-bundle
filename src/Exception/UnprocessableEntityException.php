@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class UnprocessableEntityException extends AbstractHttpStatusException
+class UnprocessableEntityException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

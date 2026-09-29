@@ -113,6 +113,45 @@ throw new BadRequestException(
 
 Without a `TranslationOption` the message is returned as is.
 
+### Extending the exceptions
+
+The exceptions are not `final`. Create a subclass for a domain case and override `defaultErrorCode()` to give it its own code:
+
+```php
+use Letkode\HttpExceptionBundle\Exception\EntityNotFoundException;
+
+class UserNotFoundException extends EntityNotFoundException
+{
+    protected function defaultErrorCode(): string
+    {
+        return 'USER_NOT_FOUND';
+    }
+}
+```
+
+Anything that catches `EntityNotFoundException` (or renders it) also handles the subclass. Your own exception class can also extend `AbstractHttpStatusException` (implement `getStatusCode()` and `defaultErrorCode()`) or implement `HttpStatusExceptionInterface`.
+
+### Errors by field
+
+Attach an `ErrorsOption` to include an `errors` object in the response, keyed by field. Each message is a string or a Symfony `TranslatableInterface`, which is translated with the request locale:
+
+```php
+use Letkode\HttpExceptionBundle\Exception\UnprocessableEntityException;
+use Letkode\HttpExceptionBundle\Option\ErrorsOption;
+
+throw new UnprocessableEntityException(
+    'Invalid input.',
+    'INVALID_INPUT',
+    options: [new ErrorsOption(['name' => ['Required.'], 'items[0].sku' => [new MyTranslatableMessage()]])],
+);
+```
+
+```json
+{ "success": false, "message": "Invalid input.", "status": 422, "errorCode": "INVALID_INPUT", "errors": { "name": ["Required."], "items[0].sku": ["..."] } }
+```
+
+Without the option the response has no `errors` key.
+
 ### Other exceptions
 
 | Thrown | Response |

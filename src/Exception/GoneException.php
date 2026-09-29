@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class GoneException extends AbstractHttpStatusException
+class GoneException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

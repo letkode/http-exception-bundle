@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class NotFoundException extends AbstractHttpStatusException
+class NotFoundException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

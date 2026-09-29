@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class InternalServerErrorException extends AbstractHttpStatusException
+class InternalServerErrorException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

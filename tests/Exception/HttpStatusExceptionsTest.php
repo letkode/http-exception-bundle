@@ -108,4 +108,28 @@ final class HttpStatusExceptionsTest extends TestCase
         $this->expectException($class);
         throw new $class('thrown');
     }
+
+    /**
+     * @param class-string<AbstractHttpStatusException> $class
+     */
+    #[DataProvider('exceptionProvider')]
+    public function testIsNotFinalSoItCanBeExtended(string $class, int $status, string $errorCode): void
+    {
+        self::assertFalse(new \ReflectionClass($class)->isFinal());
+    }
+
+    public function testASubclassCanOverrideTheDefaultErrorCode(): void
+    {
+        $exception = new class('User 7 not found.') extends EntityNotFoundException {
+            protected function defaultErrorCode(): string
+            {
+                return 'USER_NOT_FOUND';
+            }
+        };
+
+        self::assertSame(Response::HTTP_NOT_FOUND, $exception->getStatusCode());
+        self::assertSame('USER_NOT_FOUND', $exception->getErrorCode());
+        self::assertSame('CUSTOM', new class('x', 'CUSTOM') extends EntityNotFoundException {
+        }->getErrorCode());
+    }
 }

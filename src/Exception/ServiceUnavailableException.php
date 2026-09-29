@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class ServiceUnavailableException extends AbstractHttpStatusException
+class ServiceUnavailableException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

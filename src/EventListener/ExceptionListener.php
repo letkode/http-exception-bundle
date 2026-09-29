@@ -6,6 +6,7 @@ namespace Letkode\HttpExceptionBundle\EventListener;
 
 use Letkode\HttpExceptionBundle\Contract\HttpStatusExceptionInterface;
 use Letkode\HttpExceptionBundle\Contract\LocaleResolverInterface;
+use Letkode\HttpExceptionBundle\Option\ErrorsOption;
 use Letkode\HttpExceptionBundle\Option\TranslationOption;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,6 +15,7 @@ use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final readonly class ExceptionListener
@@ -42,15 +44,19 @@ final readonly class ExceptionListener
                 $this->logger->critical($exception->getMessage(), ['exception' => $exception]);
             }
 
-            $event->setResponse(new JsonResponse(
-                [
-                    'success' => false,
-                    'message' => $this->resolveCustomMessage($exception),
-                    'status' => $statusCode,
-                    'errorCode' => $exception->getErrorCode(),
-                ],
-                $statusCode,
-            ));
+            $body = [
+                'success' => false,
+                'message' => $this->resolveCustomMessage($exception),
+                'status' => $statusCode,
+                'errorCode' => $exception->getErrorCode(),
+            ];
+
+            $errors = $exception->getOption(ErrorsOption::class);
+            if (null !== $errors) {
+                $body['errors'] = $this->resolveErrors($errors);
+            }
+
+            $event->setResponse(new JsonResponse($body, $statusCode));
 
             return;
         }
@@ -123,6 +129,25 @@ final readonly class ExceptionListener
             domain: $translation->domain,
             locale: $this->localeResolver->resolve(),
         );
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private function resolveErrors(ErrorsOption $option): array
+    {
+        $locale = $this->localeResolver->resolve();
+        $errors = [];
+
+        foreach ($option->errors as $field => $messages) {
+            foreach ($messages as $message) {
+                $errors[$field][] = $message instanceof TranslatableInterface
+                    ? $message->trans($this->translator, $locale)
+                    : $message;
+            }
+        }
+
+        return $errors;
     }
 
     /**

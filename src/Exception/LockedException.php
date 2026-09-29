@@ -6,7 +6,7 @@ namespace Letkode\HttpExceptionBundle\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class LockedException extends AbstractHttpStatusException
+class LockedException extends AbstractHttpStatusException
 {
     public function getStatusCode(): int
     {

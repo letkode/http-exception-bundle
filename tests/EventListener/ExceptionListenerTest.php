@@ -8,10 +8,13 @@ use Letkode\HttpExceptionBundle\EventListener\ExceptionListener;
 use Letkode\HttpExceptionBundle\Exception\BadRequestException;
 use Letkode\HttpExceptionBundle\Exception\InternalServerErrorException;
 use Letkode\HttpExceptionBundle\Exception\NotFoundException;
+use Letkode\HttpExceptionBundle\Exception\UnprocessableEntityException;
+use Letkode\HttpExceptionBundle\Option\ErrorsOption;
 use Letkode\HttpExceptionBundle\Option\TranslationOption;
 use Letkode\HttpExceptionBundle\Tests\Fixtures\FakeTranslator;
 use Letkode\HttpExceptionBundle\Tests\Fixtures\FixedLocaleResolver;
 use Letkode\HttpExceptionBundle\Tests\Fixtures\RecordingLogger;
+use Letkode\HttpExceptionBundle\Tests\Fixtures\StubTranslatable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -288,5 +291,57 @@ final class ExceptionListenerTest extends TestCase
 
         self::assertSame('Internal error.', $body['message']);
         self::assertNull($translator->calls[0]['locale']);
+    }
+
+    public function testDomainExceptionWithErrorsOptionRendersTheErrorsByField(): void
+    {
+        $exception = new UnprocessableEntityException(
+            'Invalid input.',
+            'INVALID_INPUT',
+            options: [new ErrorsOption(['name' => ['Required.', 'Too short.'], 'items[0].sku' => ['Invalid.']])],
+        );
+
+        $event = $this->handle($exception);
+        $body = $this->body($event);
+
+        self::assertSame(422, $event->getResponse()?->getStatusCode());
+        self::assertSame('INVALID_INPUT', $body['errorCode']);
+        self::assertSame('Invalid input.', $body['message']);
+        self::assertSame(['name' => ['Required.', 'Too short.'], 'items[0].sku' => ['Invalid.']], $body['errors']);
+    }
+
+    public function testTranslatableErrorsAreTranslatedWithTheResolvedLocale(): void
+    {
+        $translator = new FakeTranslator(['query_filter|query_filter.not_sortable' => 'No se permite ordenar por «x».']);
+        $exception = new UnprocessableEntityException('Invalid input.', options: [new ErrorsOption([
+            'sort' => [new StubTranslatable('query_filter.not_sortable', ['%value%' => 'x'], 'query_filter'), 'Plain text.'],
+        ])]);
+
+        $body = $this->body($this->handle($exception, translator: $translator));
+
+        self::assertSame(['sort' => ['No se permite ordenar por «x».', 'Plain text.']], $body['errors']);
+        self::assertSame(
+            [['id' => 'query_filter.not_sortable', 'parameters' => ['%value%' => 'x'], 'domain' => 'query_filter', 'locale' => 'es']],
+            $translator->calls,
+        );
+    }
+
+    public function testTranslatableErrorsReceiveANullLocaleWhenThereIsNone(): void
+    {
+        $translator = new FakeTranslator();
+        $exception = new UnprocessableEntityException('Invalid input.', options: [new ErrorsOption([
+            'sort' => [new StubTranslatable('query_filter.not_sortable')],
+        ])]);
+
+        $this->handle($exception, locale: null, translator: $translator);
+
+        self::assertNull($translator->calls[0]['locale']);
+    }
+
+    public function testDomainExceptionWithoutErrorsOptionHasNoErrorsKey(): void
+    {
+        $body = $this->body($this->handle(new UnprocessableEntityException('Invalid input.')));
+
+        self::assertArrayNotHasKey('errors', $body);
     }
 }
