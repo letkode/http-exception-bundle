@@ -42,7 +42,7 @@ Debug traces follow `%kernel.debug%`; there is nothing to configure.
 To get a commented copy of the config in your project:
 
 ```bash
-vendor/bin/letkode-publish http-exception
+bin/console letkode:config:publish http-exception
 ```
 
 It writes `config/packages/letkode_http_exception.yaml` and never overwrites an existing file unless you add `--force`. `--dry-run` shows what it would do.
