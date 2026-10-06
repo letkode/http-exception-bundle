@@ -1,0 +1,14 @@
+letkode_http_exception:
+    # Only requests whose path starts with this are handled. '' handles every path.
+    path_prefix: /api
+
+    # Set to false to not register the ExceptionListener (use your own).
+    listener_enabled: true
+
+    # Priority of the kernel.exception listener.
+    listener_priority: 0
+
+# Per-environment override:
+# when@dev:
+#     letkode_http_exception:
+#         listener_enabled: false

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2026-10-06
+
+### Added
+- `extra.letkode.publish` in `composer.json` declares `resources/config/letkode_http_exception.yaml.dist` as a publishable example config, so `vendor/bin/letkode-publish http-exception` copies it into the project (see `letkode/config-publisher`).
+- `letkode/config-publisher` is now a `require`; it only ships the `letkode-publish` executable and is never used by the bundle's code.
+
+---
+
 ## [1.2.0] - 2026-09-29
 
 ### Added

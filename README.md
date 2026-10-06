@@ -39,6 +39,14 @@ letkode_http_exception:
 
 Debug traces follow `%kernel.debug%`; there is nothing to configure.
 
+To get a commented copy of the config in your project:
+
+```bash
+vendor/bin/letkode-publish http-exception
+```
+
+It writes `config/packages/letkode_http_exception.yaml` and never overwrites an existing file unless you add `--force`. `--dry-run` shows what it would do.
+
 ### Using your own exception listener
 
 To handle exceptions with your own listener, turn the bundle's off:
