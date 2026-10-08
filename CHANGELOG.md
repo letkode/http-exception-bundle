@@ -7,14 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.4.0] - YYYY-MM-DD
+## [1.4.0] - 2026-10-08
 
 ### Added
 - `validation.status_by_constraint`: maps constraint classes to the HTTP status of a validation failure. When every violation maps to the same status it is used instead of 422. Defaults: `UniqueField` (letkode/common-bundle) and Doctrine's `UniqueEntity` → 409. Project entries are merged on top of the defaults; `~` disables one.
 - Translation key `validation.conflict` (en, es), used as the message of a 409 validation response, whose `errorCode` is `CONFLICT`.
+- When both a class and its parent are mapped, the most specific class wins, whatever the order of the entries (so a project mapping for a subclass of `UniqueField` overrides the 409 default). A leading `\` in a key is ignored, so `\Foo\Bar: ~` also disables a default.
 
 ### Changed
-- A validation failure made only of `UniqueField`/`UniqueEntity` violations now responds **409** instead of 422. Set their entries to `~` to keep 422.
+- A validation failure made only of `UniqueField`/`UniqueEntity` violations now responds **409** instead of 422, with `message` = `validation.conflict` and `errorCode` = `CONFLICT` (previously `validation.failed` and `null`). API clients that branch on the 422 status, the message or a `null` error code for duplicates must be updated, or set those entries to `~` to keep the previous response.
 
 ---
 
