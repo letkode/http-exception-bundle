@@ -8,6 +8,16 @@ letkode_http_exception:
     # Priority of the kernel.exception listener.
     listener_priority: 0
 
+    # Validation failures whose violations ALL come from these constraints respond with the given
+    # status instead of 422 (mixed or unmapped violations stay 422). Defaults, always present:
+    #   Letkode\CommonBundle\Attribute\Constraint\UniqueField\UniqueField: 409
+    #   Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: 409
+    # Entries here are merged on top of the defaults; ~ disables a default.
+    # validation:
+    #     status_by_constraint:
+    #         App\Validator\NotLocked: 423
+    #         Letkode\CommonBundle\Attribute\Constraint\UniqueField\UniqueField: ~
+
 # Per-environment override:
 # when@dev:
 #     letkode_http_exception:

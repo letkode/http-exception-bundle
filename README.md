@@ -164,13 +164,45 @@ Without the option the response has no `errors` key.
 
 | Thrown | Response |
 |---|---|
-| `UnprocessableEntityHttpException` wrapping a `ValidationFailedException` | 422, `errors` grouped by field |
+| `UnprocessableEntityHttpException` wrapping a `ValidationFailedException` | 422, `errors` grouped by field — or the mapped status when every violation's constraint is in `validation.status_by_constraint` (see below) |
 | Any Symfony `HttpExceptionInterface` | its status; framework messages replaced by `http.<status>` / `http.default`; `traces` in debug |
 | Anything else | 500 with the `http.500` message, details only in the log |
 
+### Validation status by constraint
+
+A validation failure normally responds 422. When **every** violation comes from a constraint mapped
+in `validation.status_by_constraint` and they all map to the same status, that status is used
+instead. Out of the box, uniqueness constraints respond **409** — no configuration needed:
+
+| Constraint (default) | Status |
+|---|---|
+| `Letkode\CommonBundle\Attribute\Constraint\UniqueField\UniqueField` | 409 |
+| `Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity` | 409 |
+
+```json
+{ "success": false, "message": "The resource already exists.", "status": 409, "errorCode": "CONFLICT", "errors": { "taxId": ["..."] } }
+```
+
+Mixed violations (e.g. a malformed email plus a duplicate) stay 422. To never mix them, validate
+uniqueness in a later group with a `GroupSequence` on the DTO.
+
+Add your own mappings or disable a default (your entries are merged on top of the defaults;
+subclasses inherit the mapping; classes that are not installed are ignored):
+
+```yaml
+letkode_http_exception:
+    validation:
+        status_by_constraint:
+            App\Validator\NotLocked: 423
+            Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: ~
+```
+
+This only affects HTTP responses built by the listener; validating in a command returns the
+violations as usual.
+
 ### Translations
 
-The bundle ships `exceptions.en.yaml` and `exceptions.es.yaml` (keys `http.<status>`, `http.default`, `validation.failed`). Override any key by defining it in your application's `translations/exceptions.<locale>.yaml`.
+The bundle ships `exceptions.en.yaml` and `exceptions.es.yaml` (keys `http.<status>`, `http.default`, `validation.failed`, `validation.conflict`). Override any key by defining it in your application's `translations/exceptions.<locale>.yaml`.
 
 ### Locale
 
