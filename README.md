@@ -187,7 +187,7 @@ Mixed violations (e.g. a malformed email plus a duplicate) stay 422. To never mi
 uniqueness in a later group with a `GroupSequence` on the DTO.
 
 Add your own mappings or disable a default (your entries are merged on top of the defaults;
-subclasses inherit the mapping; classes that are not installed are ignored):
+subclasses inherit the mapping, and when both a class and its parent are mapped the most specific one wins; a leading `\` in keys is ignored; classes that are not installed are ignored):
 
 ```yaml
 letkode_http_exception:

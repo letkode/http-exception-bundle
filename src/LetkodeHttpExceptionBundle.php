@@ -70,7 +70,7 @@ final class LetkodeHttpExceptionBundle extends AbstractBundle
             $builder->removeDefinition(ExceptionListener::class);
         } else {
             $statusByConstraint = array_filter(
-                array_replace(self::DEFAULT_STATUS_BY_CONSTRAINT, $config['validation']['status_by_constraint']),
+                array_replace(self::DEFAULT_STATUS_BY_CONSTRAINT, self::normalizeClassKeys($config['validation']['status_by_constraint'])),
                 static fn (int|null $status): bool => null !== $status,
             );
 
@@ -79,5 +79,24 @@ final class LetkodeHttpExceptionBundle extends AbstractBundle
 
         $builder->setParameter('letkode.http_exception.path_prefix', $config['path_prefix']);
         $builder->setParameter('letkode.http_exception.listener_priority', $config['listener_priority']);
+    }
+
+    /**
+     * Strips a leading backslash so `\Foo\Bar` and `Foo\Bar` name the same entry (and can
+     * disable a default).
+     *
+     * @param array<string, int|null> $map
+     *
+     * @return array<string, int|null>
+     */
+    private static function normalizeClassKeys(array $map): array
+    {
+        $normalized = [];
+
+        foreach ($map as $class => $status) {
+            $normalized[ltrim($class, '\\')] = $status;
+        }
+
+        return $normalized;
     }
 }

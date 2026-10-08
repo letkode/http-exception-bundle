@@ -469,4 +469,32 @@ final class ExceptionListenerTest extends TestCase
 
         self::assertSame(422, $event->getResponse()?->getStatusCode());
     }
+
+    /**
+     * @return iterable<string, array{array<string, int>}>
+     */
+    public static function parentAndChildMapProvider(): iterable
+    {
+        yield 'parent listed first' => [[ConflictConstraint::class => 409, ChildConflictConstraint::class => 423]];
+        yield 'child listed first' => [[ChildConflictConstraint::class => 423, ConflictConstraint::class => 409]];
+    }
+
+    /**
+     * @param array<string, int> $map
+     */
+    #[DataProvider('parentAndChildMapProvider')]
+    public function testTheMostSpecificMappedClassWinsRegardlessOfOrder(array $map): void
+    {
+        $child = $this->handle(
+            $this->validationFailure([$this->violation('taxId', 'Soft unique.', new ChildConflictConstraint())]),
+            statusByConstraint: $map,
+        );
+        $parent = $this->handle(
+            $this->validationFailure([$this->violation('taxId', 'Already registered.', new ConflictConstraint())]),
+            statusByConstraint: $map,
+        );
+
+        self::assertSame(423, $child->getResponse()?->getStatusCode());
+        self::assertSame(409, $parent->getResponse()?->getStatusCode());
+    }
 }

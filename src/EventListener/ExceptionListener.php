@@ -222,20 +222,26 @@ final readonly class ExceptionListener
         return $resolved ?? Response::HTTP_UNPROCESSABLE_ENTITY;
     }
 
+    /**
+     * The status of the most specific mapped class the constraint is an instance of, so a project
+     * mapping for a subclass wins over a default mapped for its parent, whatever the map order.
+     */
     private function statusForConstraint(object|null $constraint): int|null
     {
         if (null === $constraint) {
             return null;
         }
 
+        $matchedClass = null;
+
         foreach ($this->statusByConstraint as $class => $status) {
             // instanceof with a class-name string never autoloads: classes not installed are just false
-            if ($constraint instanceof $class) {
-                return $status;
+            if ($constraint instanceof $class && (null === $matchedClass || is_a($class, $matchedClass, true))) {
+                $matchedClass = $class;
             }
         }
 
-        return null;
+        return null === $matchedClass ? null : $this->statusByConstraint[$matchedClass];
     }
 
     private function resolveMessage(HttpExceptionInterface $exception, int $statusCode): string

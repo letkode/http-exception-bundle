@@ -279,4 +279,22 @@ final class LetkodeHttpExceptionBundleTest extends TestCase
 
         self::assertFalse($container->hasDefinition(ExceptionListener::class));
     }
+
+    public function testLeadingBackslashInKeysIsNormalized(): void
+    {
+        $definition = $this->load([
+            'validation' => ['status_by_constraint' => [
+                '\\Letkode\\CommonBundle\\Attribute\\Constraint\\UniqueField\\UniqueField' => null,
+                '\\App\\Validator\\NotLocked' => 423,
+            ]],
+        ])->getDefinition(ExceptionListener::class);
+
+        self::assertSame(
+            [
+                'Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntity' => 409,
+                'App\\Validator\\NotLocked' => 423,
+            ],
+            $definition->getArgument('$statusByConstraint'),
+        );
+    }
 }
