@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -180,16 +181,61 @@ final readonly class ExceptionListener
             $errors[$field][] = $violation->getMessage();
         }
 
+        $status = $this->resolveValidationStatus($e->getViolations());
+
+        [$message, $errorCode] = match ($status) {
+            Response::HTTP_UNPROCESSABLE_ENTITY => [$this->trans('validation.failed'), null],
+            Response::HTTP_CONFLICT => [$this->trans('validation.conflict'), 'CONFLICT'],
+            default => [$this->trans("http.$status", 'http.default'), null],
+        };
+
         return new JsonResponse(
             [
                 'success' => false,
-                'message' => $this->trans('validation.failed'),
-                'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
-                'errorCode' => null,
+                'message' => $message,
+                'status' => $status,
+                'errorCode' => $errorCode,
                 'errors' => $errors,
             ],
-            Response::HTTP_UNPROCESSABLE_ENTITY,
+            $status,
         );
+    }
+
+    /**
+     * The mapped status when every violation's constraint maps to the same status; 422 otherwise
+     * (any unmapped violation, or violations mapped to different statuses).
+     */
+    private function resolveValidationStatus(ConstraintViolationListInterface $violations): int
+    {
+        $resolved = null;
+
+        foreach ($violations as $violation) {
+            $status = $this->statusForConstraint($violation->getConstraint());
+
+            if (null === $status || (null !== $resolved && $resolved !== $status)) {
+                return Response::HTTP_UNPROCESSABLE_ENTITY;
+            }
+
+            $resolved = $status;
+        }
+
+        return $resolved ?? Response::HTTP_UNPROCESSABLE_ENTITY;
+    }
+
+    private function statusForConstraint(object|null $constraint): int|null
+    {
+        if (null === $constraint) {
+            return null;
+        }
+
+        foreach ($this->statusByConstraint as $class => $status) {
+            // instanceof with a class-name string never autoloads: classes not installed are just false
+            if ($constraint instanceof $class) {
+                return $status;
+            }
+        }
+
+        return null;
     }
 
     private function resolveMessage(HttpExceptionInterface $exception, int $statusCode): string

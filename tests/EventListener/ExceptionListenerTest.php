@@ -11,8 +11,11 @@ use Letkode\HttpExceptionBundle\Exception\NotFoundException;
 use Letkode\HttpExceptionBundle\Exception\UnprocessableEntityException;
 use Letkode\HttpExceptionBundle\Option\ErrorsOption;
 use Letkode\HttpExceptionBundle\Option\TranslationOption;
+use Letkode\HttpExceptionBundle\Tests\Fixtures\ChildConflictConstraint;
+use Letkode\HttpExceptionBundle\Tests\Fixtures\ConflictConstraint;
 use Letkode\HttpExceptionBundle\Tests\Fixtures\FakeTranslator;
 use Letkode\HttpExceptionBundle\Tests\Fixtures\FixedLocaleResolver;
+use Letkode\HttpExceptionBundle\Tests\Fixtures\LockedConstraint;
 use Letkode\HttpExceptionBundle\Tests\Fixtures\RecordingLogger;
 use Letkode\HttpExceptionBundle\Tests\Fixtures\StubTranslatable;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -24,6 +27,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
@@ -39,6 +44,7 @@ final class ExceptionListenerTest extends TestCase
 
     /**
      * @param array<string, string> $messages
+     * @param array<string, int>    $statusByConstraint
      */
     private function handle(
         \Throwable $throwable,
@@ -47,6 +53,7 @@ final class ExceptionListenerTest extends TestCase
         array $messages = [],
         string|null $locale = 'es',
         FakeTranslator|null $translator = null,
+        array $statusByConstraint = [],
     ): ExceptionEvent {
         $listener = new ExceptionListener(
             $translator ?? new FakeTranslator($messages),
@@ -54,6 +61,7 @@ final class ExceptionListenerTest extends TestCase
             new FixedLocaleResolver($locale),
             $debug,
             '/api',
+            $statusByConstraint,
         );
 
         $event = new ExceptionEvent(
@@ -343,5 +351,122 @@ final class ExceptionListenerTest extends TestCase
         $body = $this->body($this->handle(new UnprocessableEntityException('Invalid input.')));
 
         self::assertArrayNotHasKey('errors', $body);
+    }
+
+    private function violation(string $path, string $message, Constraint|null $constraint): ConstraintViolation
+    {
+        return new ConstraintViolation($message, null, [], null, $path, 'x', null, null, $constraint);
+    }
+
+    /**
+     * @param list<ConstraintViolation> $violations
+     */
+    private function validationFailure(array $violations): UnprocessableEntityHttpException
+    {
+        return new UnprocessableEntityHttpException(
+            'Validation failed',
+            new ValidationFailedException('payload', new ConstraintViolationList($violations)),
+        );
+    }
+
+    private const array CONFLICT_MAP = [ConflictConstraint::class => 409];
+
+    public function testOnlyMappedViolationsUseTheMappedStatus(): void
+    {
+        $event = $this->handle(
+            $this->validationFailure([$this->violation('taxId', 'Already registered.', new ConflictConstraint())]),
+            messages: ['exceptions|validation.conflict' => 'El recurso ya existe.'],
+            statusByConstraint: self::CONFLICT_MAP,
+        );
+        $body = $this->body($event);
+
+        self::assertSame(409, $event->getResponse()?->getStatusCode());
+        self::assertSame(409, $body['status']);
+        self::assertSame('El recurso ya existe.', $body['message']);
+        self::assertSame('CONFLICT', $body['errorCode']);
+        self::assertSame(['taxId' => ['Already registered.']], $body['errors']);
+    }
+
+    public function testMixedViolationsFallBackTo422(): void
+    {
+        $event = $this->handle(
+            $this->validationFailure([
+                $this->violation('taxId', 'Already registered.', new ConflictConstraint()),
+                $this->violation('email', 'Not blank.', new NotBlank()),
+            ]),
+            messages: ['exceptions|validation.failed' => 'La validación falló.'],
+            statusByConstraint: self::CONFLICT_MAP,
+        );
+        $body = $this->body($event);
+
+        self::assertSame(422, $event->getResponse()?->getStatusCode());
+        self::assertSame('La validación falló.', $body['message']);
+        self::assertNull($body['errorCode']);
+    }
+
+    public function testViolationsMappedToDifferentStatusesFallBackTo422(): void
+    {
+        $event = $this->handle(
+            $this->validationFailure([
+                $this->violation('taxId', 'Already registered.', new ConflictConstraint()),
+                $this->violation('status', 'Locked.', new LockedConstraint()),
+            ]),
+            statusByConstraint: [ConflictConstraint::class => 409, LockedConstraint::class => 423],
+        );
+
+        self::assertSame(422, $event->getResponse()?->getStatusCode());
+    }
+
+    public function testSubclassOfAMappedConstraintInheritsTheStatus(): void
+    {
+        $event = $this->handle(
+            $this->validationFailure([$this->violation('taxId', 'Already registered.', new ChildConflictConstraint())]),
+            statusByConstraint: self::CONFLICT_MAP,
+        );
+
+        self::assertSame(409, $event->getResponse()?->getStatusCode());
+    }
+
+    public function testViolationWithoutConstraintIsTreatedAsUnmapped(): void
+    {
+        $event = $this->handle(
+            $this->validationFailure([$this->violation('taxId', 'Manual.', null)]),
+            statusByConstraint: self::CONFLICT_MAP,
+        );
+
+        self::assertSame(422, $event->getResponse()?->getStatusCode());
+    }
+
+    public function testUnknownClassInTheMapIsIgnored(): void
+    {
+        $event = $this->handle(
+            $this->validationFailure([$this->violation('taxId', 'Already registered.', new ConflictConstraint())]),
+            statusByConstraint: ['Vendor\Missing\NotInstalledConstraint' => 409],
+        );
+
+        self::assertSame(422, $event->getResponse()?->getStatusCode());
+    }
+
+    public function testOtherMappedStatusUsesTheHttpStatusMessage(): void
+    {
+        $event = $this->handle(
+            $this->validationFailure([$this->violation('status', 'Locked.', new LockedConstraint())]),
+            messages: ['exceptions|http.423' => 'El recurso está bloqueado.'],
+            statusByConstraint: [LockedConstraint::class => 423],
+        );
+        $body = $this->body($event);
+
+        self::assertSame(423, $event->getResponse()?->getStatusCode());
+        self::assertSame('El recurso está bloqueado.', $body['message']);
+        self::assertNull($body['errorCode']);
+    }
+
+    public function testWithoutAMapEverythingStays422(): void
+    {
+        $event = $this->handle(
+            $this->validationFailure([$this->violation('taxId', 'Already registered.', new ConflictConstraint())]),
+        );
+
+        self::assertSame(422, $event->getResponse()?->getStatusCode());
     }
 }

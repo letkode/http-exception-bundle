@@ -74,6 +74,7 @@ final class CatalogTest extends TestCase
         $validation = $catalog['validation'] ?? null;
         self::assertIsArray($validation);
         self::assertNotEmpty($validation['failed'] ?? null, "validation.failed missing in $locale");
+        self::assertNotEmpty($validation['conflict'] ?? null, "validation.conflict missing in $locale");
     }
 
     public function testBothLocalesDefineTheSameKeys(): void

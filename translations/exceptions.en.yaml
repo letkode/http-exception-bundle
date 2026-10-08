@@ -22,3 +22,4 @@ http:
     504: 'The upstream service timed out.'
 validation:
     failed: 'Validation failed.'
+    conflict: 'The resource already exists.'

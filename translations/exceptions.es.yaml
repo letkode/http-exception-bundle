@@ -22,3 +22,4 @@ http:
     504: 'El servicio externo tardó demasiado en responder.'
 validation:
     failed: 'La validación falló.'
+    conflict: 'El recurso ya existe.'
