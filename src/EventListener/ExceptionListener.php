@@ -20,12 +20,16 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 final readonly class ExceptionListener
 {
+    /**
+     * @param array<string, int> $statusByConstraint constraint FQCN => HTTP status for validation failures
+     */
     public function __construct(
         private TranslatorInterface $translator,
         private LoggerInterface $logger,
         private LocaleResolverInterface $localeResolver,
         private bool $debug,
         private string $pathPrefix,
+        private array $statusByConstraint = [],
     ) {
     }
 

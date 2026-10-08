@@ -194,4 +194,89 @@ final class LetkodeHttpExceptionBundleTest extends TestCase
 
         $this->load(['listener_enabled' => $value]);
     }
+
+    public function testDefaultStatusByConstraintIsInjectedIntoTheListener(): void
+    {
+        $definition = $this->load()->getDefinition(ExceptionListener::class);
+
+        self::assertSame(
+            [
+                'Letkode\CommonBundle\Attribute\Constraint\UniqueField\UniqueField' => 409,
+                'Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity' => 409,
+            ],
+            $definition->getArgument('$statusByConstraint'),
+        );
+    }
+
+    public function testProjectMappingsAreMergedOnTopOfTheDefaults(): void
+    {
+        $definition = $this->load([
+            'validation' => ['status_by_constraint' => ['App\Validator\NotLocked' => 423]],
+        ])->getDefinition(ExceptionListener::class);
+
+        self::assertSame(
+            [
+                'Letkode\CommonBundle\Attribute\Constraint\UniqueField\UniqueField' => 409,
+                'Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity' => 409,
+                'App\Validator\NotLocked' => 423,
+            ],
+            $definition->getArgument('$statusByConstraint'),
+        );
+    }
+
+    public function testNullDisablesADefaultMapping(): void
+    {
+        $definition = $this->load([
+            'validation' => ['status_by_constraint' => [
+                'Letkode\CommonBundle\Attribute\Constraint\UniqueField\UniqueField' => null,
+            ]],
+        ])->getDefinition(ExceptionListener::class);
+
+        self::assertSame(
+            ['Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity' => 409],
+            $definition->getArgument('$statusByConstraint'),
+        );
+    }
+
+    public function testAProjectCanOverrideADefaultStatus(): void
+    {
+        $definition = $this->load([
+            'validation' => ['status_by_constraint' => [
+                'Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity' => 422,
+            ]],
+        ])->getDefinition(ExceptionListener::class);
+
+        $map = $definition->getArgument('$statusByConstraint');
+        self::assertIsArray($map);
+        self::assertSame(422, $map['Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity']);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function invalidStatusProvider(): iterable
+    {
+        yield 'below 400' => [399];
+        yield 'above 599' => [600];
+        yield 'string' => ['409'];
+        yield 'bool' => [true];
+    }
+
+    #[DataProvider('invalidStatusProvider')]
+    public function testInvalidStatusIsRejected(mixed $status): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->load(['validation' => ['status_by_constraint' => ['App\Validator\Foo' => $status]]]);
+    }
+
+    public function testValidationConfigWithDisabledListenerStillLoads(): void
+    {
+        $container = $this->load([
+            'listener_enabled' => false,
+            'validation' => ['status_by_constraint' => ['App\Validator\NotLocked' => 423]],
+        ]);
+
+        self::assertFalse($container->hasDefinition(ExceptionListener::class));
+    }
 }
